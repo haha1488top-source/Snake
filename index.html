@@ -1,1 +1,502 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Змійка</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 80vh;
+            background: #4CAF50;
+            border: 4px solid #2E7D32;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #388E3C;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .score {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 20px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .control-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #FF5722;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            touch-action: manipulation;
+        }
+        
+        .control-btn:hover {
+            background: #E64A19;
+            transform: translateY(-2px);
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+            width: 80%;
+            max-width: 300px;
+        }
+        
+        .pause-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 90;
+        }
+        
+        .swipe-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
 
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .control-btn {
+                padding: 15px 30px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div class="score">Рахунок: <span id="score">0</span></div>
+        
+        <div class="game-over" id="gameOver">
+            <h2>Гра закінчена!</h2>
+            <p>Рахунок: <span id="finalScore">0</span></p>
+            <button class="control-btn" onclick="restartGame()">Грати знову</button>
+        </div>
+        
+        <div class="pause-overlay" id="pauseOverlay">
+            <h3>Пауза</h3>
+            <p>Натисніть кнопку продовжити</p>
+        </div>
+        
+        <div class="swipe-hint">
+            Використовуйте свайпи для керування змійкою
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="control-btn" onclick="startGame()">Почати гру</button>
+        <button class="control-btn" onclick="pauseGame()">Пауза</button>
+        <button class="control-btn" onclick="restartGame()">Перезапустити</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const gameOverElement = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+
+        // Розміри поля
+        const gridSize = 20;
+        let canvasSize = { width: 0, height: 0 };
+        
+        // Змійка
+        let snake = [];
+        let direction = 'right';
+        let nextDirection = 'right';
+        let gameSpeed = 100;
+        
+        // Їжа
+        let food = { x: 0, y: 0 };
+        
+        // Стан гри
+        let score = 0;
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameLoop;
+
+        // Ініціалізація canvas
+        function initCanvas() {
+            const container = canvas.parentElement;
+            canvasSize.width = Math.floor(container.clientWidth / gridSize) * gridSize;
+            canvasSize.height = Math.floor(container.clientHeight / gridSize) * gridSize;
+            
+            canvas.width = canvasSize.width;
+            canvas.height = canvasSize.height;
+        }
+
+        // Ініціалізація гри
+        function initGame() {
+            // Початкова позиція змійки
+            const startX = Math.floor(canvasSize.width / gridSize / 2) * gridSize;
+            const startY = Math.floor(canvasSize.height / gridSize / 2) * gridSize;
+            
+            snake = [
+                { x: startX, y: startY },
+                { x: startX - gridSize, y: startY },
+                { x: startX - gridSize * 2, y: startY }
+            ];
+            
+            direction = 'right';
+            nextDirection = 'right';
+            score = 0;
+            scoreElement.textContent = '0';
+            gameSpeed = 100;
+            gamePaused = false;
+            
+            generateFood();
+            gameOverElement.style.display = 'none';
+            pauseOverlay.style.display = 'none';
+        }
+
+        // Генерація їжі
+        function generateFood() {
+            const maxX = (canvasSize.width - gridSize) / gridSize;
+            const maxY = (canvasSize.height - gridSize) / gridSize;
+            
+            let newFood;
+            let onSnake;
+            
+            do {
+                newFood = {
+                    x: Math.floor(Math.random() * maxX) * gridSize,
+                    y: Math.floor(Math.random() * maxY) * gridSize
+                };
+                
+                onSnake = snake.some(segment => 
+                    segment.x === newFood.x && segment.y === newFood.y
+                );
+            } while (onSnake);
+            
+            food = newFood;
+        }
+
+        // Малювання гри
+        function draw() {
+            // Очищення canvas
+            ctx.fillStyle = '#388E3C';
+            ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+            
+            // Малювання меж
+            ctx.strokeStyle = '#2E7D32';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, canvasSize.width, canvasSize.height);
+            
+            // Малювання змійки
+            snake.forEach((segment, index) => {
+                if (index === 0) {
+                    // Голова змійки
+                    ctx.fillStyle = '#1976D2';
+                } else {
+                    // Тіло змійки
+                    ctx.fillStyle = '#2196F3';
+                }
+                ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+                
+                // Очі для голови
+                if (index === 0) {
+                    ctx.fillStyle = 'white';
+                    const eyeSize = gridSize / 5;
+                    
+                    if (direction === 'right') {
+                        ctx.fillRect(segment.x + gridSize - eyeSize * 2, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize * 2, segment.y + gridSize - eyeSize * 2, eyeSize, eyeSize);
+                    } else if (direction === 'left') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + eyeSize, segment.y + gridSize - eyeSize * 2, eyeSize, eyeSize);
+                    } else if (direction === 'up') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize * 2, segment.y + eyeSize, eyeSize, eyeSize);
+                    } else if (direction === 'down') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + gridSize - eyeSize * 2, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize * 2, segment.y + gridSize - eyeSize * 2, eyeSize, eyeSize);
+                    }
+                }
+            });
+            
+            // Малювання їжі (яблука)
+            ctx.fillStyle = '#FF5252';
+            ctx.beginPath();
+            const centerX = food.x + gridSize / 2;
+            const centerY = food.y + gridSize / 2;
+            const radius = gridSize / 2 - 2;
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Стебелко
+            ctx.strokeStyle = '#8BC34A';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - radius);
+            ctx.lineTo(centerX, centerY - radius - 5);
+            ctx.stroke();
+            
+            // Листок
+            ctx.fillStyle = '#8BC34A';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 3, centerY - radius - 3, 3, 5, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Оновлення гри
+        function update() {
+            direction = nextDirection;
+            
+            // Нова голова
+            const head = { ...snake[0] };
+            
+            switch (direction) {
+                case 'up':
+                    head.y -= gridSize;
+                    break;
+                case 'down':
+                    head.y += gridSize;
+                    break;
+                case 'left':
+                    head.x -= gridSize;
+                    break;
+                case 'right':
+                    head.x += gridSize;
+                    break;
+            }
+            
+            // Перевірка зіткнення зі стінами
+            if (head.x < 0 || head.x >= canvasSize.width || 
+                head.y < 0 || head.y >= canvasSize.height) {
+                gameOver();
+                return;
+            }
+            
+            // Перевірка зіткнення з собою
+            if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver();
+                return;
+            }
+            
+            // Додавання нової голови
+            snake.unshift(head);
+            
+            // Перевірка з'їдання їжі
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.textContent = score;
+                generateFood();
+                
+                // Збільшення швидкості
+                if (gameSpeed > 50) {
+                    gameSpeed -= 2;
+                }
+            } else {
+                // Видалення хвоста, якщо їжа не з'їдена
+                snake.pop();
+            }
+        }
+
+        // Основний цикл гри
+        function gameStep() {
+            if (!gamePaused) {
+                update();
+                draw();
+            }
+            
+            if (gameRunning && !gamePaused) {
+                gameLoop = setTimeout(gameStep, gameSpeed);
+            }
+        }
+
+        // Початок гри
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                gamePaused = false;
+                initGame();
+                gameStep();
+            }
+        }
+
+        // Пауза гри
+        function pauseGame() {
+            if (gameRunning) {
+                gamePaused = !gamePaused;
+                pauseOverlay.style.display = gamePaused ? 'block' : 'none';
+                
+                if (!gamePaused) {
+                    gameStep();
+                }
+            }
+        }
+
+        // Кінець гри
+        function gameOver() {
+            gameRunning = false;
+            gamePaused = false;
+            clearTimeout(gameLoop);
+            finalScoreElement.textContent = score;
+            gameOverElement.style.display = 'block';
+            pauseOverlay.style.display = 'none';
+        }
+
+        // Перезапуск гри
+        function restartGame() {
+            gameRunning = false;
+            gamePaused = false;
+            clearTimeout(gameLoop);
+            initGame();
+            startGame();
+        }
+
+        // Свайп-управління
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (!gameRunning || gamePaused) return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            
+            // Мінімальна довжина свайпу
+            const minSwipeDistance = 30;
+            
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
+                // Горизонтальний свайп
+                if (diffX > 0 && direction !== 'left') {
+                    nextDirection = 'right';
+                } else if (diffX < 0 && direction !== 'right') {
+                    nextDirection = 'left';
+                }
+            } else if (Math.abs(diffY) > minSwipeDistance) {
+                // Вертикальний свайп
+                if (diffY > 0 && direction !== 'up') {
+                    nextDirection = 'down';
+                } else if (diffY < 0 && direction !== 'down') {
+                    nextDirection = 'up';
+                }
+            }
+        });
+
+        // Запобігання скроллу при торканні
+        document.addEventListener('touchmove', (e) => {
+            if (gameRunning) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Клавіатура для тестування на ПК
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning || gamePaused) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') nextDirection = 'up';
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') nextDirection = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') nextDirection = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') nextDirection = 'right';
+                    break;
+            }
+        });
+
+        // Ініціалізація при завантаженні
+        window.addEventListener('load', () => {
+            initCanvas();
+            draw();
+        });
+
+        // Адаптація до зміни розміру вікна
+        window.addEventListener('resize', () => {
+            initCanvas();
+            draw();
+        });
+    </script>
+</body>
+</html>
