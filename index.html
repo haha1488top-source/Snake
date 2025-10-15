@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Симулятор Brawl Stars</title>
+    <title>Змійка</title>
     <style>
         * {
             margin: 0;
@@ -12,364 +12,494 @@
         }
         
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: white;
-            overflow: hidden;
-            width: 100vw;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: none;
         }
         
-        #game-container {
+        .game-container {
             position: relative;
             width: 100%;
-            height: 100%;
+            max-width: 600px;
+            height: 80vh;
+            background: #4CAF50;
+            border: 4px solid #2E7D32;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
         
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
+        #gameCanvas {
+            display: block;
+            background: #388E3C;
             width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
         }
         
-        .hidden {
-            display: none !important;
-        }
-        
-        /* Стилі для екрану завантаження */
-        #loading-screen {
-            background-color: #000;
-            z-index: 30;
-        }
-        
-        #loading-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .loading-bar {
+        .score {
             position: absolute;
-            bottom: 80px;
-            width: 300px;
-            height: 15px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            overflow: hidden;
-            z-index: 31;
-        }
-        
-        .loading-progress {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #FFCC00, #FF9900);
-            border-radius: 10px;
-            transition: width 0.3s ease;
-        }
-        
-        .loading-text {
-            position: absolute;
-            bottom: 50px;
-            font-size: 16px;
-            color: #ffffff;
-            z-index: 31;
-        }
-        
-        /* Стилі для екрану введення нікнейму */
-        #nickname-screen {
-            background: linear-gradient(135deg, #0f3460, #533483);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 20;
-        }
-        
-        .welcome-text {
-            font-size: 32px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 40px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            color: #FFCC00;
-        }
-        
-        .subtitle {
-            font-size: 24px;
-            margin-bottom: 30px;
-            text-align: center;
-            color: #ffffff;
-        }
-        
-        .nickname-form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            width: 100%;
-            max-width: 400px;
-        }
-        
-        .nickname-input {
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            border: 2px solid #FFCC00;
-            border-radius: 8px;
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #333;
-            text-align: center;
-        }
-        
-        .nickname-input:focus {
-            outline: none;
-            border-color: #0099FF;
-            box-shadow: 0 0 10px rgba(0, 153, 255, 0.5);
-        }
-        
-        .continue-button {
-            background: linear-gradient(135deg, #0099FF, #0066CC);
-            color: white;
-            border: none;
-            padding: 15px 40px;
+            top: 15px;
+            left: 15px;
             font-size: 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            color: white;
             font-weight: bold;
-            width: 100%;
-            max-width: 200px;
-        }
-        
-        .continue-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-            background: linear-gradient(135deg, #00AAFF, #0077DD);
-        }
-        
-        /* Стилі для головного меню */
-        #menu-screen {
-            background-size: cover;
-            background-position: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             z-index: 10;
         }
         
-        #menu-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        #menu-content {
-            width: 100%;
-            height: 100%;
+        .controls {
+            margin-top: 20px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            position: relative;
-            z-index: 11;
-        }
-        
-        #logo {
-            width: 350px;
-            margin-bottom: 30px;
-            max-width: 80%;
-        }
-        
-        .prize-slots {
-            display: flex;
-            justify-content: center;
             gap: 15px;
-            margin-bottom: 30px;
         }
         
-        .prize-slot {
-            width: 65px;
-            height: 65px;
-            background: linear-gradient(135deg, #FFCC00, #FF9900);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-            border: 1px solid white;
-        }
-        
-        .prize-icon {
-            width: 50px;
-            height: 50px;
-        }
-        
-        /* Контейнер для кнопки та монети */
-        .button-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        
-        #play-button {
-            background: linear-gradient(135deg, #0099FF, #0066CC);
+        .control-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #FF5722;
             color: white;
             border: none;
-            padding: 12px 35px;
-            font-size: 22px;
-            border-radius: 0;
+            border-radius: 25px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
-            font-weight: bold;
-            letter-spacing: 1px;
-            width: 160px;
-            height: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            touch-action: manipulation;
         }
         
-        #play-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-            background: linear-gradient(135deg, #00AAFF, #0077DD);
+        .control-btn:hover {
+            background: #E64A19;
+            transform: translateY(-2px);
         }
         
-        .mode-square {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #FFCC00, #FF9900);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-            border: 1px solid white;
-        }
-        
-        .coin-icon {
-            width: 30px;
-            height: 30px;
-        }
-        
-        /* Нікнейм та валюти у верхньому лівому куті */
-        .top-bar {
+        .game-over {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 12;
-        }
-        
-        #player-nickname {
-            font-size: 18px;
-            font-weight: bold;
-            color: #FFCC00;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 8px 15px;
-            border-radius: 20px;
-        }
-        
-        /* Валюти горизонтально */
-        .currency-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .currency-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 6px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .currency-icon {
-            width: 20px;
-            height: 20px;
-        }
-        
-        .currency-amount {
-            font-size: 14px;
-            font-weight: bold;
-            color: white;
-            min-width: 40px;
-        }
-        
-        /* Стилі для попередження */
-        .warning-message {
-            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #ff3333, #cc0000);
+            background: rgba(0, 0, 0, 0.9);
             color: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            border-radius: 15px;
             text-align: center;
+            display: none;
             z-index: 100;
-            max-width: 400px;
-            width: 90%;
-            animation: shake 0.5s ease-in-out;
+            width: 80%;
+            max-width: 300px;
         }
         
-        .warning-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #FFCC00;
+        .pause-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 90;
         }
         
-        .warning-text {
-            font-size: 18px;
-            margin-bottom: 20px;
-            line-height: 1.4;
+        .swipe-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
         }
-        
-        .warning-button {
-            background: linear-gradient(135deg, #FFCC00, #FF9900);
-            color: #333;
-            border: none;
-            padding: 12px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .control-btn {
+                padding: 15px 30px;
+                font-size: 18px;
+            }
         }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div class="score">Рахунок: <span id="score">0</span></div>
         
-        .warning-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        <div class="game-over" id="gameOver">
+            <h2>Гра закінчена!</h2>
+            <p>Рахунок: <span id="finalScore">0</span></p>
+            <button class="control-btn" onclick="restartGame()">Грати знову</button>
+        </div>
+        
+        <div class="pause-overlay" id="pauseOverlay">
+            <h3>Пауза</h3>
+            <p>Натисніть кнопку продовжити</p>
+        </div>
+        
+        <div class="swipe-hint">
+            Використовуйте свайпи для керування змійкою
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="control-btn" onclick="startGame()">Почати гру</button>
+        <button class="control-btn" onclick="pauseGame()">Пауза</button>
+        <button class="control-btn" onclick="restartGame()">Перезапустити</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const gameOverElement = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+
+        // Розміри поля
+        const gridSize = 20;
+        let canvasSize = { width: 0, height: 0 };
+        
+        // Змійка
+        let snake = [];
+        let direction = 'right';
+        let nextDirection = 'right';
+        let gameSpeed = 100;
+        
+        // Їжа
+        let food = { x: 0, y: 0 };
+        
+        // Стан гри
+        let score = 0;
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameLoop;
+
+        // Ініціалізація canvas
+        function initCanvas() {
+            const container = canvas.parentElement;
+            canvasSize.width = Math.floor(container.clientWidth / gridSize) * gridSize;
+            canvasSize.height = Math.floor(container.clientHeight / gridSize) * gridSize;
+            
+            canvas.width = canvasSize.width;
+            canvas.height = canvasSize.height;
         }
-        
-        @keyframes shake {
-            0%, 100% { transform: translate(-50%, -50%); }
-            25% { transform: translate(-52%, -50%); }
-            75% { transform: translate(-48%, -50%); }
+
+        // Ініціалізація гри
+        function initGame() {
+            // Початкова позиція змійки
+            const startX = Math.floor(canvasSize.width / gridSize / 2) * gridSize;
+            const startY = Math.floor(canvasSize.height / gridSize / 2) * gridSize;
+            
+            snake = [
+                { x: startX, y: startY },
+                { x: startX - gridSize, y: startY },
+                { x: startX - gridSize * 2, y: startY }
+            ];
+            
+            direction = 'right';
+            nextDirection = 'right';
+            score = 0;
+            scoreElement.textContent = '0';
+            gameSpeed = 100;
+            gamePaused = false;
+            
+            generateFood();
+            gameOverElement.style.display = 'none';
+            pauseOverlay.style.display = 'none';
         }
-        
-        .overlay {
-            position: fixed;
+
+        // Генерація їжі
+        function generateFood() {
+            const maxX = (canvasSize.width - gridSize) / gridSize;
+            const maxY = (canvasSize.height - gridSize) / gridSize;
+            
+            let newFood;
+            let onSnake;
+            
+            do {
+                newFood = {
+                    x: Math.floor(Math.random() * maxX) * gridSize,
+                    y: Math.floor(Math.random() * maxY) * gridSize
+                };
+                
+                onSnake = snake.some(segment => 
+                    segment.x === newFood.x && segment.y === newFood.y
+                );
+            } while (onSnake);
+            
+            food = newFood;
+        }
+
+        // Малювання гри
+        function draw() {
+            // Очищення canvas
+            ctx.fillStyle = '#388E3C';
+            ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+            
+            // Малювання меж
+            ctx.strokeStyle = '#2E7D32';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, canvasSize.width, canvasSize.height);
+            
+            // Малювання змійки
+            snake.forEach((segment, index) => {
+                if (index === 0) {
+                    // Голова змійки
+                    ctx.fillStyle = '#1976D2';
+                } else {
+                    // Тіло змійки
+                    ctx.fillStyle = '#2196F3';
+                }
+                ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+                
+                // Очі для голови
+                if (index === 0) {
+                    ctx.fillStyle = 'white';
+                    const eyeSize = gridSize / 5;
+                    
+                    if (direction === 'right') {
+                        ctx.fillRect(segment.x + gridSize - eyeSize * 2, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize * 2, segment.y + gridSize - eyeSize * 2, eyeSize, eyeSize);
+                    } else if (direction === 'left') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + eyeSize, segment.y + gridSize - eyeSize * 2, eyeSize, eyeSize);
+                    } else if (direction === 'up') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + eyeSize, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize * 2, segment.y + eyeSize, eyeSize, eyeSize);
+                    } else if (direction === 'down') {
+                        ctx.fillRect(segment.x + eyeSize, segment.y + gridSize - eyeSize * 2, eyeSize, eyeSize);
+                        ctx.fillRect(segment.x + gridSize - eyeSize * 2, segment.y + gridSize - eyeSize * 2, eyeSize, eyeSize);
+                    }
+                }
+            });
+            
+            // Малювання їжі (яблука)
+            ctx.fillStyle = '#FF5252';
+            ctx.beginPath();
+            const centerX = food.x + gridSize / 2;
+            const centerY = food.y + gridSize / 2;
+            const radius = gridSize / 2 - 2;
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Стебелко
+            ctx.strokeStyle = '#8BC34A';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - radius);
+            ctx.lineTo(centerX, centerY - radius - 5);
+            ctx.stroke();
+            
+            // Листок
+            ctx.fillStyle = '#8BC34A';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 3, centerY - radius - 3, 3, 5, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Оновлення гри
+        function update() {
+            direction = nextDirection;
+            
+            // Нова голова
+            const head = { ...snake[0] };
+            
+            switch (direction) {
+                case 'up':
+                    head.y -= gridSize;
+                    break;
+                case 'down':
+                    head.y += gridSize;
+                    break;
+                case 'left':
+                    head.x -= gridSize;
+                    break;
+                case 'right':
+                    head.x += gridSize;
+                    break;
+            }
+            
+            // Перевірка зіткнення зі стінами
+            if (head.x < 0 || head.x >= canvasSize.width || 
+                head.y < 0 || head.y >= canvasSize.height) {
+                gameOver();
+                return;
+            }
+            
+            // Перевірка зіткнення з собою
+            if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                gameOver();
+                return;
+            }
+            
+            // Додавання нової голови
+            snake.unshift(head);
+            
+            // Перевірка з'їдання їжі
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.textContent = score;
+                generateFood();
+                
+                // Збільшення швидкості
+                if (gameSpeed > 50) {
+                    gameSpeed -= 2;
+                }
+            } else {
+                // Видалення хвоста, якщо їжа не з'їдена
+                snake.pop();
+            }
+        }
+
+        // Основний цикл гри
+        function gameStep() {
+            if (!gamePaused) {
+                update();
+                draw();
+            }
+            
+            if (gameRunning && !gamePaused) {
+                gameLoop = setTimeout(gameStep, gameSpeed);
+            }
+        }
+
+        // Початок гри
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                gamePaused = false;
+                initGame();
+                gameStep();
+            }
+        }
+
+        // Пауза гри
+        function pauseGame() {
+            if (gameRunning) {
+                gamePaused = !gamePaused;
+                pauseOverlay.style.display = gamePaused ? 'block' : 'none';
+                
+                if (!gamePaused) {
+                    gameStep();
+                }
+            }
+        }
+
+        // Кінець гри
+        function gameOver() {
+            gameRunning = false;
+            gamePaused = false;
+            clearTimeout(gameLoop);
+            finalScoreElement.textContent = score;
+            gameOverElement.style.display = 'block';
+            pauseOverlay.style.display = 'none';
+        }
+
+        // Перезапуск гри
+        function restartGame() {
+            gameRunning = false;
+            gamePaused = false;
+            clearTimeout(gameLoop);
+            initGame();
+            startGame();
+        }
+
+        // Свайп-управління
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (!gameRunning || gamePaused) return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            
+            // Мінімальна довжина свайпу
+            const minSwipeDistance = 30;
+            
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
+                // Горизонтальний свайп
+                if (diffX > 0 && direction !== 'left') {
+                    nextDirection = 'right';
+                } else if (diffX < 0 && direction !== 'right') {
+                    nextDirection = 'left';
+                }
+            } else if (Math.abs(diffY) > minSwipeDistance) {
+                // Вертикальний свайп
+                if (diffY > 0 && direction !== 'up') {
+                    nextDirection = 'down';
+                } else if (diffY < 0 && direction !== 'down') {
+                    nextDirection = 'up';
+                }
+            }
+        });
+
+        // Запобігання скроллу при торканні
+        document.addEventListener('touchmove', (e) => {
+            if (gameRunning) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Клавіатура для тестування на ПК
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning || gamePaused) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') nextDirection = 'up';
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') nextDirection = 'down';
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') nextDirection = 'left';
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') nextDirection = 'right';
+                    break;
+            }
+        });
+
+        // Ініціалізація при завантаженні
+        window.addEventListener('load', () => {
+            initCanvas();
+            draw();
+        });
+
+        // Адаптація до зміни розміру вікна
+        window.addEventListener('resize', () => {
+            initCanvas();
+            draw();
+        });
+    </script>
+</body>
+</html>        position: fixed;
             top: 0;
             left: 0;
             width: 100%;
