@@ -1,138 +1,685 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
-    <title>Snake Game</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симулятор Brawl Stars</title>
     <style>
-        body { margin: 0; padding: 0; background: #222; }
-        canvas { display: block; margin: 0 auto; background: #000; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Стилі для екрану завантаження */
+        #loading-screen {
+            background-color: #000;
+            z-index: 30;
+        }
+        
+        #loading-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .loading-bar {
+            position: absolute;
+            bottom: 80px;
+            width: 300px;
+            height: 15px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 31;
+        }
+        
+        .loading-progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #FFCC00, #FF9900);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .loading-text {
+            position: absolute;
+            bottom: 50px;
+            font-size: 16px;
+            color: #ffffff;
+            z-index: 31;
+        }
+        
+        /* Стилі для екрану введення нікнейму */
+        #nickname-screen {
+            background: linear-gradient(135deg, #0f3460, #533483);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 20;
+        }
+        
+        .welcome-text {
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            color: #FFCC00;
+        }
+        
+        .subtitle {
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+        
+        .nickname-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .nickname-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #FFCC00;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+            text-align: center;
+        }
+        
+        .nickname-input:focus {
+            outline: none;
+            border-color: #0099FF;
+            box-shadow: 0 0 10px rgba(0, 153, 255, 0.5);
+        }
+        
+        .continue-button {
+            background: linear-gradient(135deg, #0099FF, #0066CC);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            width: 100%;
+            max-width: 200px;
+        }
+        
+        .continue-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #00AAFF, #0077DD);
+        }
+        
+        /* Стилі для головного меню */
+        #menu-screen {
+            background-size: cover;
+            background-position: center;
+            z-index: 10;
+        }
+        
+        #menu-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        #menu-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            z-index: 11;
+        }
+        
+        #logo {
+            width: 350px;
+            margin-bottom: 30px;
+            max-width: 80%;
+        }
+        
+        .prize-slots {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .prize-slot {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, #FFCC00, #FF9900);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            border: 1px solid white;
+        }
+        
+        .prize-icon {
+            width: 50px;
+            height: 50px;
+        }
+        
+        /* Контейнер для кнопки та монети */
+        .button-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        #play-button {
+            background: linear-gradient(135deg, #0099FF, #0066CC);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            font-size: 22px;
+            border-radius: 0;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            font-weight: bold;
+            letter-spacing: 1px;
+            width: 160px;
+            height: 50px;
+        }
+        
+        #play-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #00AAFF, #0077DD);
+        }
+        
+        .mode-square {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #FFCC00, #FF9900);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid white;
+        }
+        
+        .coin-icon {
+            width: 30px;
+            height: 30px;
+        }
+        
+        /* Нікнейм та валюти у верхньому лівому куті */
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 12;
+        }
+        
+        #player-nickname {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FFCC00;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        
+        /* Валюти горизонтально */
+        .currency-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .currency-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .currency-icon {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .currency-amount {
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            min-width: 40px;
+        }
+        
+        /* Стилі для попередження */
+        .warning-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ff3333, #cc0000);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            z-index: 100;
+            max-width: 400px;
+            width: 90%;
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        .warning-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #FFCC00;
+        }
+        
+        .warning-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        
+        .warning-button {
+            background: linear-gradient(135deg, #FFCC00, #FF9900);
+            color: #333;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .warning-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%); }
+            25% { transform: translate(-52%, -50%); }
+            75% { transform: translate(-48%, -50%); }
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 99;
+        }
     </style>
-    <script src="https://telegram.org/js/games.js"></script>
 </head>
 <body>
-    <canvas id="canvas" width="400" height="400"></canvas>
+    <div id="game-container">
+        <!-- Екран завантаження -->
+        <div id="loading-screen" class="screen">
+            <img id="loading-image" src="Img/loading_2018_original.png" alt="Завантаження Brawl Stars">
+            <div class="loading-bar">
+                <div class="loading-progress" id="loading-progress"></div>
+            </div>
+            <div class="loading-text" id="loading-text">Завантаження...</div>
+        </div>
+        
+        <!-- Екран введення нікнейму -->
+        <div id="nickname-screen" class="screen hidden">
+            <div class="welcome-text">Ласкаво просимо до</div>
+            <div class="subtitle">Brawl Simulator UA</div>
+            <div class="nickname-form">
+                <input type="text" class="nickname-input" id="nickname-input" placeholder="Введіть ваш нікнейм" maxlength="15">
+                <button class="continue-button" id="continue-button">Продовжити</button>
+            </div>
+        </div>
+        
+        <!-- Головне меню -->
+        <div id="menu-screen" class="screen hidden">
+            <img id="menu-bg" src="Img/IMG20250908155342712.jpg" alt="Фон меню">
+            
+            <!-- Нікнейм та валюти у верхньому лівому куті -->
+            <div class="top-bar">
+                <div id="player-nickname"></div>
+                <div class="currency-container">
+                    <div class="currency-item">
+                        <img class="currency-icon" src="Img/coin.png" alt="Монети">
+                        <div class="currency-amount" id="coins-amount">0</div>
+                    </div>
+                    <div class="currency-item">
+                        <img class="currency-icon" src="Img/gem.png" alt="Кристали">
+                        <div class="currency-amount" id="gems-amount">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="menu-content">
+                <img id="logo" src="Img/image1874.png" alt="Brawl Stars Logo">
+                
+                <div class="prize-slots">
+                    <div class="prize-slot">
+                        <img class="prize-icon" src="Img/box.png" alt="Приз">
+                    </div>
+                    <div class="prize-slot">
+                        <img class="prize-icon" src="Img/box.png" alt="Приз">
+                    </div>
+                    <div class="prize-slot">
+                        <img class="prize-icon" src="Img/box.png" alt="Приз">
+                    </div>
+                    <div class="prize-slot">
+                        <img class="prize-icon" src="Img/box.png" alt="Приз">
+                    </div>
+                </div>
+                
+                <div class="button-container">
+                    <button id="play-button">ГРАТИ</button>
+                    <div class="mode-square">
+                        <img class="coin-icon" src="Img/coin.png" alt="Монета">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Проста змійка для Telegram
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const gridSize = 20;
+        // Елементи DOM
+        const loadingScreen = document.getElementById('loading-screen');
+        const nicknameScreen = document.getElementById('nickname-screen');
+        const menuScreen = document.getElementById('menu-screen');
+        const loadingProgress = document.getElementById('loading-progress');
+        const loadingText = document.getElementById('loading-text');
+        const playButton = document.getElementById('play-button');
+        const nicknameInput = document.getElementById('nickname-input');
+        const continueButton = document.getElementById('continue-button');
+        const playerNickname = document.getElementById('player-nickname');
+        const coinsAmount = document.getElementById('coins-amount');
+        const gemsAmount = document.getElementById('gems-amount');
         
-        let snake = [{x: 200, y: 200}];
-        let food = {x: 0, y: 0};
-        let dx = gridSize;
-        let dy = 0;
-        let score = 0;
-
-        function init() {
-            // Ініціалізація Telegram Game
-            if (window.TelegramGame) {
-                TelegramGame.init().then(() => {
-                    console.log("Game initialized");
-                });
-            }
-            generateFood();
-            gameLoop();
+        // Змінні для завантаження
+        let loadProgress = 0;
+        const totalLoadTime = 3000; // 3 секунди
+        const intervalTime = 30; // Оновлення кожні 30 мс
+        const progressIncrement = (intervalTime / totalLoadTime) * 100;
+        
+        // Змінні для валюти
+        let coins = 0; // Початкова кількість монет
+        let gems = 0;  // Початкова кількість кристалів
+        
+        // Список заборонених слів та фраз
+        const forbiddenWords = [
+            // Нецензурна лексика (замінено на приклади)
+            'мат1', 'мат2', 'мат3', 'мат4', 'мат5',
+            // Інші неприйнятні слова
+            'поганеслово', 'образa', 'ненaлежне',
+            // Заборонені фрази
+            'дурень', 'ідiot', 'бeзмозкий'
+        ];
+        
+        // Функція для оновлення відображення валюти
+        function updateCurrencyDisplay() {
+            coinsAmount.textContent = coins.toLocaleString();
+            gemsAmount.textContent = gems.toLocaleString();
         }
-
-        function generateFood() {
-            food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
-            food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
-        }
-
-        function gameLoop() {
-            update();
-            draw();
-            setTimeout(gameLoop, 100);
-        }
-
-        function update() {
-            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+        
+        // Функція для перевірки нікнейму
+        function checkNickname(nickname) {
+            const lowerNickname = nickname.toLowerCase();
             
-            // Перевірка зіткнень
-            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
-                resetGame();
-                return;
-            }
-            
-            // З'їдання їжі
-            if (head.x === food.x && head.y === food.y) {
-                score += 10;
-                generateFood();
-            } else {
-                snake.pop();
+            // Перевірка на заборонені слова
+            for (const word of forbiddenWords) {
+                if (lowerNickname.includes(word.toLowerCase())) {
+                    return {
+                        isValid: false,
+                        reason: 'нікнейм містить заборонені слова'
+                    };
+                }
             }
             
-            snake.unshift(head);
-        }
-
-        function draw() {
-            // Очищення
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Перевірка на мінімальну довжину
+            if (nickname.length < 3) {
+                return {
+                    isValid: false,
+                    reason: 'нікнейм занадто короткий (мінімум 3 символи)'
+                };
+            }
             
-            // Змійка
-            ctx.fillStyle = '#0f0';
-            snake.forEach(segment => {
-                ctx.fillRect(segment.x, segment.y, gridSize, gridSize);
+            // Перевірка на максимальну довжину
+            if (nickname.length > 15) {
+                return {
+                    isValid: false,
+                    reason: 'нікнейм занадто довгий (максимум 15 символів)'
+                };
+            }
+            
+            // Перевірка на дозволені символи (лише літери, цифри та _)
+            const validChars = /^[a-zA-Zа-яА-ЯїЇіІєЄ0-9_]+$/;
+            if (!validChars.test(nickname)) {
+                return {
+                    isValid: false,
+                    reason: 'нікнейм містить заборонені символи'
+                };
+            }
+            
+            return { isValid: true };
+        }
+        
+        // Функція для показу попередження
+        function showWarning(message) {
+            // Створюємо затемнення
+            const overlay = document.createElement('div');
+            overlay.className = 'overlay';
+            
+            // Створюємо повідомлення
+            const warning = document.createElement('div');
+            warning.className = 'warning-message';
+            warning.innerHTML = `
+                <div class="warning-title">⚠️ Увага!</div>
+                <div class="warning-text">${message}</div>
+                <button class="warning-button" id="close-warning">Зрозуміло</button>
+            `;
+            
+            // Додаємо елементи на сторінку
+            document.body.appendChild(overlay);
+            document.body.appendChild(warning);
+            
+            // Додаємо обробник для кнопки закриття
+            document.getElementById('close-warning').addEventListener('click', function() {
+                document.body.removeChild(overlay);
+                document.body.removeChild(warning);
+                nicknameInput.focus();
             });
-            
-            // Їжа
-            ctx.fillStyle = '#f00';
-            ctx.fillRect(food.x, food.y, gridSize, gridSize);
-            
-            // Рахунок
-            ctx.fillStyle = '#fff';
-            ctx.font = '20px Arial';
-            ctx.fillText('Score: ' + score, 10, 30);
         }
-
-        function resetGame() {
-            snake = [{x: 200, y: 200}];
-            dx = gridSize;
-            dy = 0;
-            score = 0;
-            generateFood();
-        }
-
-        // Управління
-        document.addEventListener('keydown', (e) => {
-            switch(e.key) {
-                case 'ArrowUp': if (dy === 0) { dx = 0; dy = -gridSize; } break;
-                case 'ArrowDown': if (dy === 0) { dx = 0; dy = gridSize; } break;
-                case 'ArrowLeft': if (dx === 0) { dx = -gridSize; dy = 0; } break;
-                case 'ArrowRight': if (dx === 0) { dx = gridSize; dy = 0; } break;
-            }
-        });
-
-        // Сенсорне управління
-        let touchStartX, touchStartY;
         
-        canvas.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        });
-
-        canvas.addEventListener('touchend', (e) => {
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
+        // Функція для оновлення прогресу завантаження
+        function updateLoadingProgress() {
+            loadProgress += progressIncrement;
             
-            const diffX = touchEndX - touchStartX;
-            const diffY = touchEndY - touchStartY;
-            
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                // Горизонтальний свайп
-                if (diffX > 0 && dx === 0) { dx = gridSize; dy = 0; }
-                else if (diffX < 0 && dx === 0) { dx = -gridSize; dy = 0; }
+            if (loadProgress <= 100) {
+                loadingProgress.style.width = loadProgress + '%';
+                
+                // Оновлення тексту
+                if (loadProgress < 30) {
+                    loadingText.textContent = "Завантаження ресурсів...";
+                } else if (loadProgress < 70) {
+                    loadingText.textContent = "Підготовка гри...";
+                } else {
+                    loadingText.textContent = "Майже готово...";
+                }
+                
+                setTimeout(updateLoadingProgress, intervalTime);
             } else {
-                // Вертикальний свайп
-                if (diffY > 0 && dy === 0) { dx = 0; dy = gridSize; }
-                else if (diffY < 0 && dy === 0) { dx = 0; dy = -gridSize; }
+                // Завантаження завершено
+                loadingText.textContent = "Завантаження завершено!";
+                
+                // Перехід до екрану введення нікнейму
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                    nicknameScreen.classList.remove('hidden');
+                    nicknameInput.focus();
+                }, 500);
             }
-        });
-
-        // Запуск гри
-        init();
+        }
+        
+        // Обробник події для кнопки "Продовжити"
+        function handleContinueClick() {
+            const nickname = nicknameInput.value.trim();
+            
+            if (nickname) {
+                // Перевіряємо нікнейм
+                const checkResult = checkNickname(nickname);
+                
+                if (checkResult.isValid) {
+                    // Зберігаємо нікнейм і переходимо до головного меню
+                    playerNickname.textContent = nickname;
+                    nicknameScreen.classList.add('hidden');
+                    menuScreen.classList.remove('hidden');
+                    
+                    // Оновлюємо відображення валюти
+                    updateCurrencyDisplay();
+                } else {
+                    // Показуємо попередження
+                    showWarning(`Ваш нікнейм не відповідає правилам гри. ${checkResult.reason}. Будь ласка, виберіть інший нікнейм.`);
+                }
+            } else {
+                showWarning('Будь ласка, введіть ваш нікнейм!');
+                nicknameInput.focus();
+            }
+        }
+        
+        // Дозволити натискання Enter для підтвердження нікнейму
+        function handleNicknameKeyPress(e) {
+            if (e.key === 'Enter') {
+                handleContinueClick();
+            }
+        }
+        
+        // Обробник події для кнопки "Грати"
+        function handlePlayClick() {
+            alert('Гра розпочата! Успіхів, ' + playerNickname.textContent + '!');
+            // Тут буде перехід до ігрового процесу
+            
+            // Додаємо трохи валюти для демонстрації
+            coins += 50;
+            gems += 5;
+            updateCurrencyDisplay();
+        }
+        
+        // Ініціалізація гри
+        function initGame() {
+            console.log("Гра ініціалізована");
+            
+            // Додаємо обробники подій
+            continueButton.addEventListener('click', handleContinueClick);
+            nicknameInput.addEventListener('keypress', handleNicknameKeyPress);
+            playButton.addEventListener('click', handlePlayClick);
+            
+            // Запускаємо прогрес завантаження
+            setTimeout(updateLoadingProgress, 500);
+        }
+        
+        // Запускаємо гру після повного завантаження сторінки
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGame);
+        } else {
+            initGame();
+        }
+        
+        // Обробка помилок завантаження зображень
+        window.addEventListener('error', function(e) {
+            if (e.target.tagName === 'IMG') {
+                console.error('Помилка завантаження зображення: ' + e.target.src);
+                // Створюємо просту заглушку
+                const img = e.target;
+                let color = '#000';
+                let text = img.alt;
+                
+                if (img.id === 'loading-image') {
+                    color = '#1a1a2e';
+                } else if (img.id === 'menu-bg') {
+                    color = '#0f3460';
+                } else if (img.src.includes('coin.png')) {
+                    color = '#FFD700';
+                    text = '🪙';
+                } else if (img.src.includes('gem.png')) {
+                    color = '#00BFFF';
+                    text = '💎';
+                }
+                
+                img.style.backgroundColor = color;
+                img.style.display = 'flex';
+                img.style.alignItems = 'center';
+                img.style.justifyContent = 'center';
+                img.style.color = 'white';
+                img.style.fontSize = '20px';
+                img.innerHTML = text;
+            }
+        }, true);
     </script>
 </body>
 </html>
